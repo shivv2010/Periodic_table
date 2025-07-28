@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Periodic Table</title>
+    <style>
+        :root {
+            --alkali-metal: #FF9E9E;
+            --alkaline-earth: #FFD59E;
+            --transition-metal: #FFFD9E;
+            --post-transition: #D0FF9E;
+            --metalloid: #9EFFB0;
+            --nonmetal: #9EFFFF;
+            --halogen: #9EB5FF;
+            --noble-gas: #D19EFF;
+            --lanthanide: #FF9EEA;
+            --actinide: #FF9EB2;
+            --unknown: #E0E0E0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .search-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        #search {
+            padding: 10px 15px;
+            width: 300px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        #search:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, 1fr);
+            grid-gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .element {
+            position: relative;
+            padding: 10px 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .element:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .element .number {
+            font-size: 0.8rem;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+
+        .element .symbol {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .element .name {
+            font-size: 0.7rem;
+            margin-top: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .element-details {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .element-details.active {
+            display: block;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .detail-symbol {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-right: 20px;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+        }
+
+        .detail-name {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .detail-number {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .detail-body {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-gap: 15px;
+        }
+
+        .property {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .property-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .property-value {
+            font-size: 1.1rem;
+        }
+
+        .category-alkali-metal { background-color: var(--alkali-metal); }
+        .category-alkaline-earth { background-color: var(--alkaline-earth); }
+        .category-transition-metal { background-color: var(--transition-metal); }
+        .category-post-transition { background-color: var(--post-transition); }
+        .category-metalloid { background-color: var(--metalloid); }
+        .category-nonmetal { background-color: var(--nonmetal); }
+        .category-halogen { background-color: var(--halogen); }
+        .category-noble-gas { background-color: var(--noble-gas); }
+        .category-lanthanide { background-color: var(--lanthanide); }
+        .category-actinide { background-color: var(--actinide); }
+        .category-unknown { background-color: var(--unknown); }
+
+        .empty { visibility: hidden; }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+
+        @media (max-width: 1200px) {
+            .periodic-table {
+                grid-template-columns: repeat(9, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .periodic-table {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            .element {
+                height: 70px;
+            }
+            
+            .element .symbol {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .periodic-table {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .element {
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Interactive Periodic Table</h1>
+            <p>Click on any element to view detailed information</p>
+        </header>
+
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Search for an element (name, symbol, or number)...">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--alkali-metal)"></div>Alkali Metal</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--alkaline-earth)"></div>Alkaline Earth</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--transition-metal)"></div>Transition Metal</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--post-transition)"></div>Post-Transition</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--metalloid)"></div>Metalloid</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--nonmetal)"></div>Nonmetal</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--halogen)"></div>Halogen</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--noble-gas)"></div>Noble Gas</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--lanthanide)"></div>Lanthanide</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--actinide)"></div>Actinide</div>
+        </div>
+
+        <div class="periodic-table" id="periodicTable">
+            <!-- Elements will be inserted here by JavaScript -->
+        </div>
+
+        <div class="element-details" id="elementDetails">
+            <!-- Element details will be inserted here by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        const elements = [
+            { number: 1, symbol: "H", name: "Hydrogen", category: "nonmetal", atomic_mass: 1.008, 
+              electron_configuration: "1s1", electronegativity: 2.20, phase: "Gas", density: 0.00008988,
+              melt: 14.01, boil: 20.28, discovered_by: "Henry Cavendish", year: 1766 },
+            
+            { number: 2, symbol: "He", name: "Helium", category: "noble-gas", atomic_mass: 4.0026, 
+              electron_configuration: "1s2", electronegativity: null, phase: "Gas", density: 0.0001785,
+              melt: null, boil: 4.22, discovered_by: "Pierre Janssen", year: 1868 },
+            
+            { number: 3, symbol: "Li", name: "Lithium", category: "alkali-metal", atomic_mass: 6.94, 
+              electron_configuration: "[He] 2s1", electronegativity: 0.98, phase: "Solid", density: 0.534,
+              melt: 453.65, boil: 1603, discovered_by: "Johan August Arfwedson", year: 1817 },
+            
+            { number: 4, symbol: "Be", name: "Beryllium", category: "alkaline-earth", atomic_mass: 9.0122, 
+              electron_configuration: "[He] 2s2", electronegativity: 1.57, phase: "Solid", density: 1.85,
+              melt: 1560, boil: 2742, discovered_by: "Louis Nicolas Vauquelin", year: 1798 },
+            
+            { number: 5, symbol: "B", name: "Boron", category: "metalloid", atomic_mass: 10.81, 
+              electron_configuration: "[He] 2s2 2p1", electronegativity: 2.04, phase: "Solid", density: 2.34,
+              melt: 2349, boil: 4200, discovered_by: "Joseph Louis Gay-Lussac", year: 1808 },
+            
+            { number: 6, symbol: "C", name: "Carbon", category: "nonmetal", atomic_mass: 12.011, 
+              electron_configuration: "[He] 2s2 2p2", electronegativity: 2.55, phase: "Solid", density: 2.267,
+              melt: 3800, boil: 4300, discovered_by: "Ancient", year: "Ancient" },
+            
+            { number: 7, symbol: "N", name: "Nitrogen", category: "nonmetal", atomic_mass: 14.007, 
+              electron_configuration: "[He] 2s2 2p3", electronegativity: 3.04, phase: "Gas", density: 0.0012506,
+              melt: 63.15, boil: 77.36, discovered_by: "Daniel Rutherford", year: 1772 },
+            
+            { number: 8, symbol: "O", name: "Oxygen", category: "nonmetal", atomic_mass: 15.999, 
+              electron_configuration: "[He] 2s2 2p4", electronegativity: 3.44, phase: "Gas", density: 0.001429,
+              melt: 54.36, boil: 90.20, discovered_by: "Carl Wilhelm Scheele", year: 1771 },
+            
+            { number: 9, symbol: "F", name: "Fluorine", category: "halogen", atomic_mass: 18.998, 
+              electron_configuration: "[He] 2s2 2p5", electronegativity: 3.98, phase: "Gas", density: 0.001696,
+              melt: 53.53, boil: 85.03, discovered_by: "Henri Moissan", year: 1886 },
+            
+            { number: 10, symbol: "Ne", name: "Neon", category: "noble-gas", atomic_mass: 20.180, 
+              electron_configuration: "[He] 2s2 2p6", electronegativity: null, phase: "Gas", density: 0.0008999,
+              melt: 24.56, boil: 27.07, discovered_by: "Morris Travers", year: 1898 },
+            
+            { number: 11, symbol: "Na", name: "Sodium", category: "alkali-metal", atomic_mass: 22.990, 
+              electron_configuration: "[Ne] 3s1", electronegativity: 0.93, phase: "Solid", density: 0.968,
+              melt: 370.87, boil: 1156, discovered_by: "Humphry Davy", year: 1807 },
+            
+            { number: 12, symbol: "Mg", name: "Magnesium", category: "alkaline-earth", atomic_mass: 24.305, 
+              electron_configuration: "[Ne] 3s2", electronegativity: 1.31, phase: "Solid", density: 1.738,
+              melt: 923, boil: 1363, discovered_by: "Joseph Black", year: 1755 },
+            
+            { number: 13, symbol: "Al", name: "Aluminum", category: "post-transition", atomic_mass: 26.982, 
+              electron_configuration: "[Ne] 3s2 3p1", electronegativity: 1.61, phase: "Solid", density: 2.698,
+              melt: 933.47, boil: 2792, discovered_by: "Hans Christian Ørsted", year: 1825 },
+            
+            { number: 14, symbol: "Si", name: "Silicon", category: "metalloid", atomic_mass: 28.085, 
+              electron_configuration: "[Ne] 3s2 3p2", electronegativity: 1.90, phase: "Solid", density: 2.3296,
+              melt: 1687, boil: 3538, discovered_by: "Jöns Jacob Berzelius", year: 1824 },
+            
+            { number: 15, symbol: "P", name: "Phosphorus", category: "nonmetal", atomic_mass: 30.974, 
+              electron_configuration: "[Ne] 3s2 3p3", electronegativity: 2.19, phase: "Solid", density: 1.82,
+              melt: 317.30, boil: 550, discovered_by: "Hennig Brand", year: 1669 },
+            
+            { number: 16, symbol: "S", name: "Sulfur", category: "nonmetal", atomic_mass: 32.06, 
+              electron_configuration: "[Ne] 3s2 3p4", electronegativity: 2.58, phase: "Solid", density: 2.067,
+              melt: 388.36, boil: 717.87, discovered_by: "Ancient", year: "Ancient" },
+            
+            { number: 17, symbol: "Cl", name: "Chlorine", category: "halogen", atomic_mass: 35.45, 
+              electron_configuration: "[Ne] 3s2 3p5", electronegativity: 3.16, phase: "Gas", density: 0.003214,
+              melt: 171.6, boil: 239.11, discovered_by: "Carl Wilhelm Scheele", year: 1774 },
+            
+            { number: 18, symbol: "Ar", name: "Argon", category: "noble-gas", atomic_mass: 39.948, 
+              electron_configuration: "[Ne] 3s2 3p6", electronegativity: null, phase: "Gas", density: 0.0017837,
+              melt: 83.80, boil: 87.30, discovered_by: "Lord Rayleigh", year: 1894 },
+            
+            { number: 19, symbol: "K", name: "Potassium", category: "alkali-metal", atomic_mass: 39.098, 
+              electron_configuration: "[Ar] 4s1", electronegativity: 0.82, phase: "Solid", density: 0.862,
+              melt: 336.53, boil: 1032, discovered_by: "Humphry Davy", year: 1807 },
+            
+            { number: 20, symbol: "Ca", name: "Calcium", category: "alkaline-earth", atomic_mass: 40.078, 
+              electron_configuration: "[Ar] 4s2", electronegativity: 1.00, phase: "Solid", density: 1.54,
+              melt: 1115, boil: 1757, discovered_by: "Humphry Davy", year: 1808 },
+            
+            // More elements would be added here...
+        ];
+
+        // Simplified positions for the periodic table (real positions would be more complex)
+        const elementPositions = {
+            1: { row: 1, col: 1 },
+            2: { row: 1, col: 18 },
+            3: { row: 2, col: 1 },
+            4: { row: 2, col: 2 },
+            5: { row: 2, col: 13 },
+            6: { row: 2, col: 14 },
+            7: { row: 2, col: 15 },
+            8: { row: 2, col: 16 },
+            9: { row: 2, col: 17 },
+            10: { row: 2, col: 18 },
+            11: { row: 3, col: 1 },
+            12: { row: 3, col: 2 },
+            13: { row: 3, col: 13 },
+            14: { row: 3, col: 14 },
+            15: { row: 3, col: 15 },
+            16: { row: 3, col: 16 },
+            17: { row: 3, col: 17 },
+            18: { row: 3, col: 18 },
+            19: { row: 4, col: 1 },
+            20: { row: 4, col: 2 },
+            // More positions would be added here...
+        };
+
+        const periodicTable = document.getElementById('periodicTable');
+        const elementDetails = document.getElementById('elementDetails');
+        const searchInput = document.getElementById('search');
+
+        // Create the periodic table grid
+        function createPeriodicTable() {
+            // Create 18 columns x 7 rows grid
+            for (let row = 1; row <= 7; row++) {
+                for (let col = 1; col <= 18; col++) {
+                    const element = elements.find(el => {
+                        const pos = elementPositions[el.number];
+                        return pos && pos.row === row && pos.col === col;
+                    });
+
+                    const cell = document.createElement('div');
+                    if (element) {
+                        cell.className = `element category-${element.category.replace(' ', '-')}`;
+                        cell.innerHTML = `
+                            <div class="number">${element.number}</div>
+                            <div class="symbol">${element.symbol}</div>
+                            <div class="name">${element.name}</div>
+                        `;
+                        cell.addEventListener('click', () => showElementDetails(element));
+                    } else {
+                        cell.className = 'empty';
+                    }
+                    periodicTable.appendChild(cell);
+                }
+            }
+        }
+
+        // Show element details
+        function showElementDetails(element) {
+            elementDetails.innerHTML = `
+                <div class="detail-header">
+                    <div class="detail-symbol category-${element.category.replace(' ', '-')}">${element.symbol}</div>
+                    <div>
+                        <div class="detail-name">${element.name}</div>
+                        <div class="detail-number">Atomic Number: ${element.number}</div>
+                    </div>
+                </div>
+                <div class="detail-body">
+                    <div class="property">
+                        <div class="property-title">Atomic Mass</div>
+                        <div class="property-value">${element.atomic_mass} u</div>
+                    </div>
+                    <div class="property">
+                        <div class="property-title">Category</div>
+                        <div class="property-value">${element.category}</div>
+                    </div>
+                    <div class="property">
+                        <div class="property-title">Phase</div>
+                        <div class="property-value">${element.phase}</div>
+                    </div>
+                    <div class="property">
+                        <div class="property-title">Electron Configuration</div>
+                        <div class="property-value">${element.electron_configuration}</div>
+                    </div>
+                    <div class="property">
+                        <div class="property-title">Electronegativity</div>
+                        <div class="property-value">${element.electronegativity || 'N/A'}</div>
+                    </div>
+                    <div class="property">
+                        <div class="property-title">Density</div>
+                        <div class="property-value">${element.density} g/cm³</div>
+                    </div>
+                    <div class="property">
+                        <div class="property-title">Melting Point</div>
+                        <div class="property-value">${element.melt ? element.melt + ' K' : 'N/A'}</div>
+                    </div>
+                    <div class="property">
+                        <div class="property-title">Boiling Point</div>
+                        <div class="property-value">${element.boil ? element.boil + ' K' : 'N/A'}</div>
+                    </div>
+                    <div class="property">
+                        <div class="property-title">Discovered By</div>
+                        <div class="property-value">${element.discovered_by}</div>
+                    </div>
+                    <div class="property">
+                        <div class="property-title">Year Discovered</div>
+                        <div class="property-value">${element.year}</div>
+                    </div>
+                </div>
+            `;
+            elementDetails.classList.add('active');
+            
+            // Scroll to details
+            elementDetails.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            if (searchTerm.length < 1) return;
+
+            const foundElement = elements.find(el => 
+                el.name.toLowerCase().includes(searchTerm) || 
+                el.symbol.toLowerCase().includes(searchTerm) || 
+                el.number.toString().includes(searchTerm)
+            );
+
+            if (foundElement) {
+                showElementDetails(foundElement);
+            }
+        });
+
+        // Initialize the periodic table
+        createPeriodicTable();
+    </script>
+</body>
+</html>
